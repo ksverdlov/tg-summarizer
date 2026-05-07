@@ -1,5 +1,6 @@
-pyrogram>=2.0.0
+pyrofork>=2.3.0
 tgcrypto
+qrcode
 ollama
 python-dotenv
 rich
