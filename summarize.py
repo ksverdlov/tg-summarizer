@@ -190,10 +190,23 @@ def format_messages_for_llm(messages: list, chat_name: str) -> str:
     return "\n".join(lines)
 
 
-def summarize_with_ollama(text: str, model: str) -> str:
-    """Send text to Ollama for summarization."""
+def _is_qwen_thinking_model(model: str) -> bool:
+    """Qwen3 and QwQ ship with thinking mode on by default; we disable it."""
+    name = model.lower()
+    return name.startswith("qwen3") or name.startswith("qwq")
+
+
+def _ollama_generate(model: str, prompt: str):
     import ollama
 
+    kwargs = {"model": model, "prompt": prompt}
+    if _is_qwen_thinking_model(model):
+        kwargs["think"] = False
+    return ollama.generate(**kwargs)
+
+
+def summarize_with_ollama(text: str, model: str) -> str:
+    """Send text to Ollama for summarization."""
     prompt = f"""Summarize the following Telegram chat messages in Russian.
 Be concise and focus on key points, action items, and important information.
 Use bullet points. Keep the summary short (3-5 bullet points max).
@@ -202,7 +215,7 @@ Use bullet points. Keep the summary short (3-5 bullet points max).
 
 Summary:"""
 
-    response = ollama.generate(model=model, prompt=prompt)
+    response = _ollama_generate(model, prompt)
     return response['response'].strip()
 
 
@@ -224,8 +237,7 @@ def summarize_chat(chat_name: str, messages: list, model: str) -> list:
 {combined}
 
 Final summary:"""
-        import ollama
-        response = ollama.generate(model=model, prompt=final_prompt)
+        response = _ollama_generate(model, final_prompt)
         return [response['response'].strip()]
 
     return summaries
